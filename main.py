@@ -7,17 +7,42 @@ RED = "#e7305b"
 GREEN = "#9bdeac"
 YELLOW = "#f7f5dd"
 FONT_NAME = "Courier"
-WORK_MIN = 25
-SHORT_BREAK_MIN = 5
-LONG_BREAK_MIN = 20
+WORK_MIN = 1
+SHORT_BREAK_MIN = 1
+LONG_BREAK_MIN = 1
+reps = 1
+timer = None
 
 
 # ---------------------------- TIMER RESET ------------------------------- #
+def reset_clicked():
+    window.after_cancel(timer)
+    timer_label.config(text="Timer", fg=GREEN)
+    canvas.itemconfig(timer_text, text="00:00")
+    check_mark_label.config(text="")
+    global reps
+    reps = 1
+
 
 # ---------------------------- TIMER MECHANISM ------------------------------- #
 
 def start_clicked():
-    count_down(5*60)
+    global reps
+
+    work_sec = WORK_MIN * 6
+    short_break_sec = SHORT_BREAK_MIN * 6
+    long_break_sec = LONG_BREAK_MIN * 6
+
+    if reps % 8 == 0:
+        count_down(long_break_sec)
+        timer_label.config(text="Break", fg=RED)
+    elif reps % 2 == 0:
+        count_down(short_break_sec)
+        timer_label.config(text="Break", fg=PINK)
+    else:
+        count_down(work_sec)
+        timer_label.config(text="Work", fg=GREEN)
+    reps += 1
 
 
 # ---------------------------- COUNTDOWN MECHANISM ------------------------------- #
@@ -32,13 +57,18 @@ def count_down(count):
 
     canvas.itemconfig(timer_text, text=f"{count_min}:{count_s}")
     if count > 0:
-        window.after(1000, count_down, count - 1)
+        global timer
+        timer = window.after(1000, count_down, count - 1)
+    else:
+        raise_window(window)
+        window.bell()
+        start_clicked()
+        if reps % 2 == 1:
+            check_marks = "✔" * math.floor(reps / 2)
+            check_mark_label.config(text=check_marks)
 
 
 # ---------------------------- UI SETUP ------------------------------- #
-
-def reset_clicked():
-    pass
 
 
 window = Tk()
@@ -60,8 +90,12 @@ start_button.grid(column=0, row=2)
 reset_button = Button(text="Reset", command=reset_clicked)
 reset_button.grid(column=2, row=2)
 
-check_mark = "✔"
-check_mark_label = Label(text=check_mark, fg=GREEN, bg=YELLOW)
+check_mark_label = Label(fg=GREEN, bg=YELLOW)
 check_mark_label.grid(column=1, row=3)
+
+
+def raise_window(window):
+    window.attributes('-topmost', 1)
+    window.attributes('-topmost', 0)
 
 window.mainloop()
